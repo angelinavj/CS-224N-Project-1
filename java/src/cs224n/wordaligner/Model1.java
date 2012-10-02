@@ -3,6 +3,8 @@ package cs224n.wordaligner;
 import cs224n.util.*;
 import java.util.List;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 /*
  * Word alignment model that uses IBM model 1.
@@ -10,9 +12,8 @@ import java.util.Set;
  * @author Kat Busch
  */
 
-public class M1WordAligner implements WordAligner {
+public class Model1 implements WordAligner {
   private CounterMap<String, String> sourceTargetProbability;
-
 
   public Alignment align(SentencePair sentencePair) {
     Alignment alignment = new Alignment();
@@ -59,8 +60,11 @@ public class M1WordAligner implements WordAligner {
     }
   }
   public void train(List<SentencePair> trainingPairs) {
-    Set<String> allTargetWords = new HashSet<String>();
     Set<String> allSourceWords = new HashSet<String>();
+
+    // Set of target words that appears with a particular source word.
+    HashMap coOccurringTargetWords = new HashMap();
+
 
     for (SentencePair pair : trainingPairs) {
       List<String> targetWords = pair.getTargetWords();
@@ -69,25 +73,36 @@ public class M1WordAligner implements WordAligner {
         targetWords.set(i, targetWords.get(i).toLowerCase());
       }
 
+      sourceWords.add(0, NULL_WORD);
+
       for (int i = 0; i < sourceWords.size(); i++) {
         sourceWords.set(i, sourceWords.get(i).toLowerCase());
+        for (String targetWord : targetWords) {
+          if (coOccurringTargetWords.get(sourceWords.get(i)) == null) {
+            HashSet<String> set = new HashSet<String>();
+            set.add(targetWord);
+            coOccurringTargetWords.put(sourceWords.get(i), set);
+          } else {
+            HashSet set = (HashSet) coOccurringTargetWords.get(sourceWords.get(i));
+            set.add(targetWord);
+            coOccurringTargetWords.put(sourceWords.get(i), set);
+          }
+
+        }
       }
 
-      allTargetWords.addAll(targetWords);
       allSourceWords.addAll(sourceWords);    
-
-      sourceWords.add(0, NULL_WORD);
     }
 
-    initUniformProbability(allSourceWords, allTargetWords);
+    initUniformProbability(allSourceWords, coOccurringTargetWords);
 
     boolean converged = false;
     int numIter = 0;
     do {
-      converged = trainOnce(trainingPairs, allSourceWords, allTargetWords);
+      converged = trainOnce(trainingPairs, allSourceWords, coOccurringTargetWords);
   
       numIter++;
-    }while ((!converged) && (numIter < 10));  
+    }while (!converged); 
 
     for (SentencePair pair: trainingPairs) {
       List<String> sourceWords = pair.getSourceWords();
@@ -95,9 +110,14 @@ public class M1WordAligner implements WordAligner {
     }
   }
 
+  /*
+   * Train the trainingPairs onc.
+   * Returns true if the data converged in this training iteration, or false otherwise.
+   */
   private boolean trainOnce(List<SentencePair> trainingPairs,
-                         Set<String> allSourceWords, Set<String> allTargetWords) {
+                         Set<String> allSourceWords, HashMap coOccurringTargetWords) {
     CounterMap<String, String> sourceTargetCooccurrenceCount = new CounterMap<String, String>();
+    Counter<String> total = new Counter<String>();
 
     for (SentencePair pair : trainingPairs) {
       List<String> targetWords = pair.getTargetWords();
@@ -120,42 +140,42 @@ public class M1WordAligner implements WordAligner {
           sourceTargetCooccurrenceCount.incrementCount(sourceWords.get(srcIndex),
                                                       targetWords.get(tgtIndex),
                                                       posterior);
+          total.incrementCount(targetWords.get(tgtIndex), posterior);
         }
       }
     }
 
     int numConverged = 0;
-    // Normalizing the counts into probability
-    for (String targetWord : allTargetWords) {
-      double denom = 0;
-      for (String sourceWord : allSourceWords) {
-        denom += sourceTargetCooccurrenceCount.getCount(sourceWord, targetWord);
-      }
+    int totalData = 0;
+    for (String sourceWord : allSourceWords) {
+      for (String targetWord : (HashSet<String>)(coOccurringTargetWords.get(sourceWord))) {
 
-      for (String sourceWord : allSourceWords) {
         double newValue = sourceTargetCooccurrenceCount.getCount(
-                                                sourceWord, targetWord) / denom;
+                                                sourceWord, targetWord) / total.getCount(targetWord);
 
         if (Math.abs(sourceTargetProbability.getCount(sourceWord, targetWord) -
                      newValue) < 0.000001) {
             numConverged++;
     
         }
+        totalData++;
         sourceTargetProbability.setCount(sourceWord, targetWord, newValue);
 
       }
     }
 
-    return (numConverged > 0.95 * allSourceWords.size() * allTargetWords.size());
+    return (numConverged > 0.95 * totalData);
   }
   // Initializes sourceTargetProbability counterMap with uniform probability.
 
-  private void initUniformProbability(Set<String> allSourceWords, Set<String> allTargetWords) {
+  private void initUniformProbability(Set<String> allSourceWords, HashMap coOccurringTargetWords) {
     sourceTargetProbability = new CounterMap<String, String>();
 
     for (String sourceWord : allSourceWords) {
-      for (String targetWord : allTargetWords) {
-        sourceTargetProbability.setCount(sourceWord, targetWord, 1/(double)allSourceWords.size());
+      HashSet<String> targetWords = (HashSet<String>) (coOccurringTargetWords.get(sourceWord));
+      for (String targetWord : targetWords) {
+        double denom = targetWords.size();
+        sourceTargetProbability.setCount(sourceWord, targetWord, 1/denom);
       }
     }
   }
