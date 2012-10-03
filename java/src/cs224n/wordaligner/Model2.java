@@ -184,17 +184,10 @@ public class Model2 implements WordAligner {
   private void initProbabilities(List<SentencePair> trainingPairs, 
                                  Set<String> allSourceWords,
                                  HashMap coOccurringTargetWords) {
-    sourceTargetProbability = new CounterMap<String, String>();
+    Model1 model1 = new Model1();
+    
     alignmentProbability = new CounterMap<Integer, Integer>();
-
-    // TODO(veni): use result of Model1.
-    for (String sourceWord : allSourceWords) {
-      HashSet<String> targetWords = (HashSet<String>) (coOccurringTargetWords.get(sourceWord));
-      for (String targetWord : targetWords) {
-        double denom = targetWords.size();
-        sourceTargetProbability.setCount(sourceWord, targetWord, 1/denom);
-      }
-    }
+    sourceTargetProbability = model1.getTranslationProbability(trainingPairs);
 
     maxNumSourceWords = 0;
     maxNumTargetWords = 0;

@@ -59,6 +59,7 @@ public class Model1 implements WordAligner {
       }
     }
   }
+
   public void train(List<SentencePair> trainingPairs) {
     Set<String> allSourceWords = new HashSet<String>();
 
@@ -110,6 +111,10 @@ public class Model1 implements WordAligner {
     }
   }
 
+  public CounterMap<String, String> getTranslationProbability(List<SentencePair> trainingPairs) {
+    train(trainingPairs);
+    return sourceTargetProbability;
+  }
   /*
    * Train the trainingPairs onc.
    * Returns true if the data converged in this training iteration, or false otherwise.
