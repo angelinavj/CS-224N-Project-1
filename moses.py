@@ -12,11 +12,6 @@ PRO = "--pairwise-ranked"
 def run_command(name, command):
 	outfile.write('Running %s\n' %(name))
 	outfile.write('Command: \n %s' % (command))
-
-	tmp = open("tempout", 'w')
-	tmp.write(command)
-	tmp.close()
-
 	start = time.time()
 	os.system(command)
 	end = time.time()
@@ -64,7 +59,6 @@ def main(phrase_len, dist_lim):
 
 	outfile.write('\n\nPRO:\n')
 	tune(dist_lim, PRO)
-	name = 's2000-%dpl-%ddl'%(phrase_len, dist_lim)
 	decode(name + '-pro')
 	eval(name + '-pro')
 
