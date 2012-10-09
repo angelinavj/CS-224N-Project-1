@@ -8,6 +8,6 @@ Evaluation set size: 447
 Model: cs224n.wordaligner.Model2
 
 ### Evaluation Results ###
-Precision:	0.6579
-Recall:	0.8108
-AER:	0.2898
+Precision:	0.6583
+Recall:	0.8110
+AER:	0.2894

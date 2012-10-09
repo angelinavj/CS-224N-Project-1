@@ -18,6 +18,7 @@ public class Model2 implements WordAligner {
   private CounterMap<Integer, Integer> alignmentProbability;
   private int maxNumSourceWords;
   private int maxNumTargetWords;
+  private final double EPS = 0.000001;
 
   public Alignment align(SentencePair sentencePair) {
     Alignment alignment = new Alignment();
@@ -62,6 +63,31 @@ public class Model2 implements WordAligner {
       }
     }
   }
+
+  public boolean isNormalized(List<SentencePair> trainingPairs) {
+    Set<String> allSourceWords = new HashSet<String>();
+    Set<String> allTargetWords = new HashSet<String>();
+
+
+    for (SentencePair pair : trainingPairs) {
+      List<String> targetWords = pair.getTargetWords();
+      List<String> sourceWords = pair.getSourceWords();
+      allSourceWords.addAll(sourceWords);
+      allTargetWords.addAll(targetWords);
+    }
+    for (String targetWord : allTargetWords) {
+      double total = 0.0;
+      for (String sourceWord : allSourceWords) {
+        total += sourceTargetProbability.getCount(sourceWord, targetWord);
+      }
+
+      if ((total < 1.0 - EPS) || (total > 1.0 + EPS)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public void train(List<SentencePair> trainingPairs) {
     Set<String> allSourceWords = new HashSet<String>();
 
@@ -103,7 +129,10 @@ public class Model2 implements WordAligner {
     int numIter = 0;
     do {
       converged = trainOnce(trainingPairs, allSourceWords, coOccurringTargetWords);
- 
+
+      if (numIter % 2 == 0) {
+        assert (isNormalized(trainingPairs));
+      } 
       numIter++;
     }while ((!converged) && (numIter < 50)); 
 
@@ -163,7 +192,7 @@ public class Model2 implements WordAligner {
                          sourceWord, targetWord) / totalCooccurrenceCount.getCount(targetWord);
 
         if (Math.abs(sourceTargetProbability.getCount(sourceWord, targetWord) -
-                     newValue) < 0.000001) {
+                     newValue) < EPS) {
             numConverged++;
     
         }
