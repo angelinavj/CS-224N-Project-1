@@ -1,0 +1,13 @@
+/// CS224n Word Alignment Tester ///
+Language: chinese
+Data path: /afs/ir/class/cs224n/pa1/data/chinese
+Evaluation set: test
+Using up to 40000 training sentences.
+Training set size: 40000
+Evaluation set size: 3909
+Model: cs224n.wordaligner.Model2
+
+### Evaluation Results ###
+Precision:	0.5249
+Recall:	0.3732
+AER:	0.5638

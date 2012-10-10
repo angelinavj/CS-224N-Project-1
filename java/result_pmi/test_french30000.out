@@ -1,0 +1,13 @@
+/// CS224n Word Alignment Tester ///
+Language: french
+Data path: /afs/ir/class/cs224n/pa1/data/french
+Evaluation set: test
+Using up to 30000 training sentences.
+Training set size: 30000
+Evaluation set size: 447
+Model: cs224n.wordaligner.PMIModel
+
+### Evaluation Results ###
+Precision:	0.3742
+Recall:	0.4049
+AER:	0.6153
