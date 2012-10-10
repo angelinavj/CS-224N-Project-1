@@ -1,0 +1,14 @@
+CS224N-Project-1
+=================
+Veni Johanna
+Kat Busch
+
+Classnames (for running alignment with standard commands)
+PMIModel
+Model1
+Model2
+
+For running tuning:
+moses.py [max phrase len] [dist lim] [path to home folder]
+
+This will populate HOME/output with moses.ini, decode output (-test) and BLEU output (-eval) named based on the parameters.  It will also put a summary file in the HOME folder.
